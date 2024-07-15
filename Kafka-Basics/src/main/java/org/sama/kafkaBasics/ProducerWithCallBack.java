@@ -25,34 +25,46 @@ public class ProducerWithCallBack {
         properties.setProperty("key.serializer", StringSerializer.class.getName());
         properties.setProperty("value.serializer", StringSerializer.class.getName());
 
+        properties.setProperty("batch.size", "100");
+
 
         // Create producer
         KafkaProducer<String, String> producer = new KafkaProducer<>(properties);
 
-        System.out.println("KeySet: " + properties.keySet());
+//        System.out.println("KeySet: " + properties.keySet());
 
-        for (int i= 0; i< 1; i ++){
-            // Create a producer record
-            ProducerRecord<String, String> producerRecord = new ProducerRecord<>("demo-topic", "Record: " + i);
+        for (int j = 0; j < 5; j++) {
 
-            // Send data -- asynchronous
-            producer.send(producerRecord, new Callback() {
-                @Override
-                public void onCompletion(RecordMetadata metadata, Exception except) {
-                    // execute every time a record is successfully
-                    if (except == null){
-                        log.info("Received new metadata: \n" +
-                                "Topic:" + metadata.topic() + "\n" +
-                                "Partition:" + metadata.partition() + "\n" +
-                                "Offset:" + metadata.offset() + "\n" +
-                                "ValueSize(int):" + metadata.serializedValueSize() + "\n" +
-                                "Timestamp:" + metadata.timestamp() + "\n"
-                        );
-                    } else {
-                        log.error("Error Occurred while producing: " + except);
+            for (int i = 0; i < 10; i++) {
+
+                String topic = "demo-topic";
+                String key = "id_" + i;
+                String value = "Value: \n" + i;
+
+                // Create a producer record
+                ProducerRecord<String, String> producerRecord = new ProducerRecord<>(topic, key, value);
+
+                // Send data -- asynchronous
+                producer.send(producerRecord, new Callback() {
+                    @Override
+                    public void onCompletion(RecordMetadata metadata, Exception except) {
+                        // execute every time a record is successfully
+                        if (except == null) {
+                            log.info("Received new metadata: \n" +
+                                    "Key:" + key + " || Partition:" + metadata.partition() + "\n");
+
+                        } else {
+                            log.error("Error Occurred while producing: " + except);
+                        }
                     }
-                }
-            });
+                });
+            }
+
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
 
 
