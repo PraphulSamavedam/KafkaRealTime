@@ -1,12 +1,8 @@
 package org.sama.kafkaBasics;
 
 
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.errors.WakeupException;
-import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,25 +11,20 @@ import java.util.List;
 import java.util.Properties;
 
 /*
-This class represents a never ending consumer which takes a graceful shutdown when signalled for terminate.
-There can be code duplication due to course content.
+This class represents a never ending consumer. This is just for demo.
  */
-public class ConsumerDemoWithShutdown{
+public class ConsumerDemoCooperative{
 
-    private static final Logger log = LoggerFactory.getLogger(ConsumerDemoWithShutdown.class.getSimpleName());
+    private static final Logger log = LoggerFactory.getLogger(ConsumerDemoCooperative.class.getSimpleName());
     public static void main(String[] args) {
-        log.info("Consumer Demo with shutdown");
+        log.info("Consumer Demo with shutdown and Co-operative reassignment");
 
-        final String groupId = "application-group-renewed";
-        final String topic = "demo-topic";
+        final String groupId = "application-group-new";
 
-        // Setup Consumer Properties
-        Properties properties = new Properties();
-        properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
-        properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, groupId);
-        properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        AbstractConsumer.setGroupId(groupId);
+        Properties properties = AbstractConsumer.setUp();
+        properties.setProperty(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG,
+                CooperativeStickyAssignor.class.getName());
 
         // Create KafkaConsumer
         KafkaConsumer<String, String> consumer = new KafkaConsumer<>(properties);
@@ -56,7 +47,7 @@ public class ConsumerDemoWithShutdown{
 
         try {
             // Subscribe to a topic
-            consumer.subscribe(List.of(topic));
+            consumer.subscribe(List.of(AbstractConsumer.topic));
 
             // Consume the data
             while (true){

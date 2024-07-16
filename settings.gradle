@@ -1,3 +1,4 @@
 rootProject.name = 'KafkaRTProject'
 include 'Kafka-Basics'
+include 'RTWikiMedia'
 
